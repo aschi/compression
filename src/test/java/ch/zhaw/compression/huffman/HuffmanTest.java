@@ -14,6 +14,7 @@ public class HuffmanTest {
 		try {
 			String data = FileHandler.readTextFile(new File("res/sample.txt"));
 			Huffman h = new Huffman(data);
+			FileHandler.writeBinaryFile(new File("res/testoutput.bin"), h.encodeString(data));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -4,7 +4,7 @@ public class Node<T> {
 	private T value;
 	private int emphasis;
 	
-	private Node<T> root;
+	private Node<T> parent;
 	private Node<T> left;
 	private Node<T> right;
 	
@@ -33,6 +33,14 @@ public class Node<T> {
 		this.left = left;
 	}
 	
+	public Node<T> getParent() {
+		return parent;
+	}
+
+	public void setParent(Node<T> parent) {
+		this.parent = parent;
+	}
+
 	public Node<T> getRight(){
 		return right;
 	}
@@ -40,11 +48,32 @@ public class Node<T> {
 	public Node<T> getLeft(){
 		return left;
 	}
+	
+	public int getDepthBeyond(){
+		int ld =0;
+		int rd =0;
+		if(left == null && right == null){
+			return 0;
+		}else{
+			if(left!= null){
+				ld = left.getDepthBeyond();
+			}
+			if(right!=null){
+				rd = right.getDepthBeyond();
+			}
+		}
+		
+		if(ld > rd){
+			return (ld+1);
+		}else{
+			return (rd+1);
+		}
+	}
 
 	@Override
 	public String toString() {
-		return "Node [value=" + value + ", emphasis=" + emphasis + ", root="
-				+ root + ", left=" + left + ", right=" + right + "]";
+		return "Node [value=" + value + ", emphasis=" + emphasis + ", parent="
+				+ parent + ", left=" + left + ", right=" + right + "]";
 		
 	}
 	

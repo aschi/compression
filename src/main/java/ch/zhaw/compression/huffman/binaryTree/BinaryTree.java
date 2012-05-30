@@ -16,9 +16,13 @@ public class BinaryTree<T> implements Comparable<BinaryTree<T>> {
 		this.root = root;
 	}
 
+	public int getHeight(){
+		return root.getDepthBeyond()+1;
+	}
+	
 	@Override
 	public int compareTo(BinaryTree<T> o) {
-		if(getRoot().getEmphasis() < o.getRoot().getEmphasis()){
+		if(getRoot().getEmphasis() > o.getRoot().getEmphasis()){
 			return 1;
 		}else{
 			return -1;
@@ -36,9 +40,16 @@ public class BinaryTree<T> implements Comparable<BinaryTree<T>> {
 
 	public BinaryTree<T> combineTrees(BinaryTree<T> t1,
 			BinaryTree<T> t2) {
+		//create new root node
 		Node<T> newRoot = new Node<T>(null, t1.getRoot().getEmphasis()+t2.getRoot().getEmphasis());
 		newRoot.setLeft(t1.getRoot());
 		newRoot.setRight(t2.getRoot());
+		
+		//add parent reference
+		t1.getRoot().setParent(newRoot);
+		t2.getRoot().setParent(newRoot);
+		
+		
 		return new BinaryTree<T>(newRoot);
 	}
 	
