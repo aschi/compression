@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 import ch.zhaw.compression.huffman.binaryTree.BinaryTree;
 import ch.zhaw.compression.huffman.binaryTree.Node;
