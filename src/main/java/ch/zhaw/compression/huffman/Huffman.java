@@ -1,7 +1,6 @@
 package ch.zhaw.compression.huffman;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -10,17 +9,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import netscape.security.ForbiddenTargetException;
-
-import sun.security.util.BitArray;
-
 import ch.zhaw.compression.huffman.binaryTree.BinaryTree;
 import ch.zhaw.compression.huffman.binaryTree.Node;
 
 public class Huffman {
 	private String data;
 	private BinaryTree<Character> binaryTree;
-	private Map<Character, BitArray> encoding;
+	private Map<Character, String> encoding;
 	
 	public Huffman(String data) {
 		this.data = data;
@@ -28,7 +23,6 @@ public class Huffman {
 	}
 
 	private void buildBinaryTree() {
-		System.out.println(data);
 		Map<Character, Integer> counter = new HashMap<Character, Integer>();
 		for (char c : data.toCharArray()) {
 			//System.out.println(c);
@@ -96,16 +90,14 @@ public class Huffman {
 	}
 	
 	private void generateEncodingFromTree(){
-		encoding = new HashMap<Character, BitArray>();
+		encoding = new HashMap<Character, String>();
 		Node<Character> root = binaryTree.getRoot();
-		
-		BitArray ba = new BitArray(0);
-		
+				
 		if(root.getLeft() != null){
-			generateCodes(root.getLeft(), ba, false);
+			generateCodes(root.getLeft(), "", false);
 		}
 		if(root.getRight() != null){
-			generateCodes(root.getRight(), ba, true);
+			generateCodes(root.getRight(), "", true);
 		}
 	}
 	
@@ -115,52 +107,39 @@ public class Huffman {
 	 * @param previous BitSet of parent node
 	 * @param direction boolean. left = false; right = true
 	 */
-	private void generateCodes(Node<Character> nd, BitArray previous, boolean direction){
-		BitArray ba = new BitArray(previous.length()+1);
-		for(int i = 0;i < previous.length();i++){
-			ba.set(i, previous.get(i));
-		}
-		ba.set(previous.length(), direction);
+	private void generateCodes(Node<Character> nd, String previous, boolean direction){
+		String enc = previous+(direction ? '1' : '0');
 		
 		if(nd.getValue() != null){
-			encoding.put(nd.getValue(), ba);
+			encoding.put(nd.getValue(), enc);
 			return;
 		}
 		
 		if(nd.getLeft()!=null){
-			generateCodes(nd.getLeft(), ba, false);
+			generateCodes(nd.getLeft(), enc, false);
 		}
 		if(nd.getRight()!=null){
-			generateCodes(nd.getRight(), ba, true);
+			generateCodes(nd.getRight(), enc, true);
 		}
 	}
 	
-	public BitArray encodeString(String dataInput){
+	public String encodeString(String dataInput){
 		long t1 = System.currentTimeMillis();
 		System.out.println("encoding data..");
-		BitArray rv = new BitArray(0);
+		int decodedSize = (data.length()*8);
+		
+		
+		StringBuffer sb = new StringBuffer();
 		int i = 0;
 		for(Character c : dataInput.toCharArray()){
-			i++;
-			if(i % 10000 == 0){
-				System.out.print("\r"+i + " of " + dataInput.toCharArray().length);
-			}
-			rv = concatBitArrays(rv, encoding.get(c));
+			sb.append(encoding.get(c));
 		}
+		
 		System.out.println("encoding finished (" + (System.currentTimeMillis()-t1) +"ms)");
-		return rv;
-	
-	
-	}
-	
-	
-	private BitArray concatBitArrays(BitArray a1, BitArray a2){
-		boolean[] rv = new boolean[a1.length()+a2.length()];
+		int encodedSize = sb.toString().length();
 		
-		System.arraycopy(a1.toBooleanArray(), 0, rv, 0, a1.length());
-	    System.arraycopy(a2.toBooleanArray(), 0, rv, a1.length(), a2.length());
-		
-		return new BitArray(rv);
+		System.out.println("decoded size: " + decodedSize + "Bit; encoded size: " + encodedSize + "Bit; Compression: " + ((double)encodedSize/(double)decodedSize*100)+"%");
+		return sb.toString();
 	}
 	
 	

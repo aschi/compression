@@ -1,12 +1,9 @@
-package ch.zhaw.compression;
+package ch.zhaw.compression.util;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-
-import sun.security.util.BitArray;
 
 
 public class FileHandler {
@@ -27,10 +24,6 @@ public class FileHandler {
 		
 		return contents.toString();
 	}
-	
-	public static void writeBinaryFile(File f, BitArray ba) throws IOException{
-       FileOutputStream fos = new FileOutputStream(f);
-   	   fos.write(ba.toByteArray());
-	}
+
 	
 }
