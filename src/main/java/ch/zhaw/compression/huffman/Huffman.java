@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -11,48 +12,52 @@ import java.util.TreeMap;
 
 import ch.zhaw.compression.huffman.binaryTree.BinaryTree;
 import ch.zhaw.compression.huffman.binaryTree.Node;
+import ch.zhaw.compression.util.BitStream;
 
 public class Huffman {
-	private String data;
-	private BinaryTree<Character> binaryTree;
-	private Map<Character, String> encoding;
+	private List<Integer> lzwInput;
+	private BinaryTree<Integer> binaryTree;
+	private Map<Integer, BitStream> encoding;
+	private Map<BitStream, Integer> decoding;
 	
-	public Huffman(String data) {
-		this.data = data;
+	
+	public Huffman(List<Integer> lzwInput) {
+		this.lzwInput = lzwInput;
 		buildBinaryTree();
 	}
 
 	private void buildBinaryTree() {
-		Map<Character, Integer> counter = new HashMap<Character, Integer>();
-		for (char c : data.toCharArray()) {
+		System.out.println("building huffman tree...");
+		Map<Integer, Integer> counter = new HashMap<Integer, Integer>();
+		for (int i : lzwInput) {
 			//System.out.println(c);
-			if (counter.keySet().contains(c)) {
-				counter.put(c, counter.get(c) + 1);
+			if (counter.keySet().contains(i)) {
+				counter.put(i, counter.get(i) + 1);
 			} else {
-				counter.put(c, 1);
+				counter.put(i, 1);
 			}
 		}
 		
-		Map<Character, Integer> sortedMap = new TreeMap<Character, Integer>(new ValueComparator(counter));
+		Map<Integer, Integer> sortedMap = new TreeMap<Integer, Integer>(new ValueComparator(counter));
 		sortedMap.putAll(counter);
 		
-        for(char c : sortedMap.keySet()){
-        	System.out.println(c +" : " + counter.get(c));
+        for(int i : sortedMap.keySet()){
+        	System.out.println(i +" : " + counter.get(i));
         }
                 
-        List<BinaryTree<Character>> treeList = new ArrayList<BinaryTree<Character>>();
+        List<BinaryTree<Integer>> treeList = new ArrayList<BinaryTree<Integer>>();
         
-        for(Character c : sortedMap.keySet()){
-        	System.out.println(c);
-        	treeList.add(new BinaryTree<Character>(new Node<Character>(c, counter.get(c))));
+        for(Integer i : sortedMap.keySet()){
+        	System.out.println(i);
+        	treeList.add(new BinaryTree<Integer>(new Node<Integer>(i, counter.get(i))));
         }
      
         System.out.println(treeList.size());
         
         int i = 0;
         while((treeList.size() > 1)){
-        	BinaryTree<Character> t1 = treeList.get(0);
-        	BinaryTree<Character> t2 = treeList.get(1);
+        	BinaryTree<Integer> t1 = treeList.get(0);
+        	BinaryTree<Integer> t2 = treeList.get(1);
         	treeList.remove(t1);
         	treeList.remove(t2);
         	
@@ -71,8 +76,8 @@ public class Huffman {
         generateEncodingFromTree();
         
         
-        for(Character c : encoding.keySet()){
-        	System.out.println(c + " : " + encoding.get(c).toString());
+        for(Integer out : encoding.keySet()){
+        	System.out.println(out + " : " + encoding.get(out).toString());
         }
 	}
 
@@ -90,14 +95,15 @@ public class Huffman {
 	}
 	
 	private void generateEncodingFromTree(){
-		encoding = new HashMap<Character, String>();
-		Node<Character> root = binaryTree.getRoot();
+		encoding = new HashMap<Integer, BitStream>();
+		decoding = new HashMap<BitStream, Integer>();
+		Node<Integer> root = binaryTree.getRoot();
 				
 		if(root.getLeft() != null){
-			generateCodes(root.getLeft(), "", false);
+			generateCodes(root.getLeft(), new BitStream(), false);
 		}
 		if(root.getRight() != null){
-			generateCodes(root.getRight(), "", true);
+			generateCodes(root.getRight(), new BitStream(), true);
 		}
 	}
 	
@@ -107,41 +113,71 @@ public class Huffman {
 	 * @param previous BitSet of parent node
 	 * @param direction boolean. left = false; right = true
 	 */
-	private void generateCodes(Node<Character> nd, String previous, boolean direction){
-		String enc = previous+(direction ? '1' : '0');
+	private void generateCodes(Node<Integer> nd, BitStream previous, boolean direction){
+		String enc = previous.toString()+(direction ? '1' : '0');
 		
 		if(nd.getValue() != null){
-			encoding.put(nd.getValue(), enc);
+			encoding.put(nd.getValue(), new BitStream(enc));
+			decoding.put(new BitStream(enc), nd.getValue());
 			return;
 		}
 		
 		if(nd.getLeft()!=null){
-			generateCodes(nd.getLeft(), enc, false);
+			generateCodes(nd.getLeft(), new BitStream(enc), false);
 		}
 		if(nd.getRight()!=null){
-			generateCodes(nd.getRight(), enc, true);
+			generateCodes(nd.getRight(), new BitStream(enc), true);
 		}
 	}
 	
-	public String encodeString(String dataInput){
+	public BitStream encode(List<Integer> dataInput){
 		long t1 = System.currentTimeMillis();
-		System.out.println("encoding data..");
-		int decodedSize = (data.length()*8);
+		System.out.println("huffman: encoding data..");
+		int decodedSize = (dataInput.size() * 12);
 		
 		
-		StringBuffer sb = new StringBuffer();
+		BitStream out = new BitStream();
 		int i = 0;
-		for(Character c : dataInput.toCharArray()){
-			sb.append(encoding.get(c));
+		for(int in : dataInput){
+			out.add(encoding.get(in));
 		}
 		
 		System.out.println("encoding finished (" + (System.currentTimeMillis()-t1) +"ms)");
-		int encodedSize = sb.toString().length();
+		int encodedSize = out.size();
 		
 		System.out.println("decoded size: " + decodedSize + "Bit; encoded size: " + encodedSize + "Bit; Compression: " + ((double)encodedSize/(double)decodedSize*100)+"%");
-		return sb.toString();
+		return out;
 	}
 	
+	public List<Integer> decode(BitStream input){
+		List<Integer> rv = new LinkedList<Integer>();
+		
+		String inputStr = input.toString();
+		
+		int pos = 0;
+		while(true){
+			int length = 1;
+			
+			while(decoding.get(new BitStream(inputStr.substring(pos, pos+length))) == null){
+				if(length+pos < input.size()){
+					length++;
+				}
+			}
+			
+			if(decoding.get(new BitStream(inputStr.substring(pos, pos+length))) != null){
+				rv.add(decoding.get(input.getSubStream(pos, length)));
+			}
+			
+			pos+=length;
+			
+			if(pos >= input.size()){
+				break;
+			}
+		}
+		
+		
+		return rv;
+	}
 	
 	private class ValueComparator implements Comparator {
 		  Map base;
